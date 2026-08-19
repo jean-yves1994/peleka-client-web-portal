@@ -1,21 +1,28 @@
 "use client";
+
+import { Suspense, useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, LoaderCircle, ArrowLeft } from "lucide-react";
 import { api } from "@/lib/api";
-export default function Payment() {
-  const { id } = useParams(),
-    sp = useSearchParams();
+
+function PaymentContent() {
+  const { id } = useParams();
+  const sp = useSearchParams();
+
   const pid = sp.get("payment");
-  const [p, setP] = useState(null),
-    [err, setErr] = useState("");
+
+  const [p, setP] = useState(null);
+  const [err, setErr] = useState("");
+
   useEffect(() => {
     let timer;
+
     async function check() {
       try {
         const x = await api.payment(pid);
         setP(x?.data || x);
+
         if ((x?.data || x)?.status === "paid") {
           clearInterval(timer);
         }
@@ -23,12 +30,15 @@ export default function Payment() {
         setErr(e.message);
       }
     }
+
     if (pid) {
       check();
       timer = setInterval(check, 3000);
     }
+
     return () => clearInterval(timer);
   }, [pid]);
+
   return (
     <div className="center-page">
       <div className="payment-card">
@@ -41,18 +51,23 @@ export default function Payment() {
             <LoaderCircle size={30} className="spin" />
           )}
         </div>
+
         <div className="section-kicker">PELEKA PAYMENT</div>
+
         <h1>
           {p?.status === "paid"
             ? "Payment confirmed"
             : "Approve payment on your phone"}
         </h1>
+
         <p>
           {p?.status === "paid"
             ? "Your shipment is now being prepared for assignment."
             : "Check your Mobile Money phone and approve the payment request. This page will update automatically."}
         </p>
+
         {err && <div className="form-error">{err}</div>}
+
         <Link
           href={`/dashboard/shipments/${id}`}
           className="button button-dark"
@@ -61,5 +76,13 @@ export default function Payment() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function Payment() {
+  return (
+    <Suspense fallback={null}>
+      <PaymentContent />
+    </Suspense>
   );
 }

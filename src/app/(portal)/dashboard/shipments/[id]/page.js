@@ -1,6 +1,7 @@
 "use client";
+
 import Link from "next/link";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
@@ -9,9 +10,7 @@ import {
   Image as ImageIcon,
   MapPinned,
   Phone,
-  Star,
   Truck,
-  XCircle,
 } from "lucide-react";
 import { api } from "@/lib/api";
 const label = (s) =>
@@ -25,8 +24,7 @@ const money = (n, c = "RWF") =>
     maximumFractionDigits: 0,
   }).format(Number(n || 0));
 export default function Detail() {
-  const { id } = useParams(),
-    sp = useSearchParams();
+  const { id } = useParams();
   const [data, setData] = useState(null),
     [loading, setLoading] = useState(true),
     [payPhone, setPayPhone] = useState(""),
