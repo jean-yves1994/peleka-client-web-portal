@@ -282,11 +282,6 @@ export default function NewShipment() {
                 onChange={(v) => set("sender_phone", v)}
               />
               <Field
-                label="Sender email"
-                value={form.sender_email}
-                onChange={(v) => set("sender_email", v)}
-              />
-              <Field
                 required
                 label="Recipient name"
                 value={form.recipient_name}
@@ -297,11 +292,6 @@ export default function NewShipment() {
                 label="Recipient phone"
                 value={form.recipient_phone}
                 onChange={(v) => set("recipient_phone", v)}
-              />
-              <Field
-                label="Recipient email"
-                value={form.recipient_email}
-                onChange={(v) => set("recipient_email", v)}
               />
             </div>
           </section>
