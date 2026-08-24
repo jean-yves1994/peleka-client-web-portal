@@ -32,7 +32,13 @@ export default function Detail() {
     [msg, setMsg] = useState("");
   async function load() {
     try {
-      setData(await api.shipment(id));
+      const response = await api.shipment(id);
+
+      // The Peleka API wraps successful responses as:
+      // { success: true, data: { shipment, status_history, ... } }
+      // api.shipment() returns that complete response, so unwrap `data`
+      // before the page reads `data.shipment`.
+      setData(response?.data || response);
     } catch (e) {
       setMsg(e.message);
     } finally {

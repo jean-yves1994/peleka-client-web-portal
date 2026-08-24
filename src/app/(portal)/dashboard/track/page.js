@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { MapPin, Truck, Navigation, RefreshCw } from "lucide-react";
+import ShipmentMap from "@/components/ShipmentMap";
 
 function TrackContent() {
   const sp = useSearchParams();
@@ -14,10 +15,31 @@ function TrackContent() {
   const [err, setErr] = useState("");
 
   async function load() {
-    if (!id) return;
-
     try {
-      setData(await api.track(id));
+      let shipmentId = id;
+
+      // Resolve shipment ID from tracking number when coming from search
+      if (!shipmentId && number) {
+        const result = await api.publicTrack(number);
+
+        console.log("PUBLIC TRACK RESPONSE:", result);
+
+        shipmentId = result.data?.shipment?.id;
+
+        if (!shipmentId) {
+          throw new Error("Shipment not found");
+        }
+
+        setId(shipmentId);
+      }
+
+      if (!shipmentId) return;
+
+      const result = await api.track(shipmentId);
+
+      console.log("TRACK RESPONSE:", result);
+
+      setData(result.data);
       setErr("");
     } catch (e) {
       setErr(e.message);
@@ -30,7 +52,7 @@ function TrackContent() {
     const t = setInterval(load, 10000);
 
     return () => clearInterval(t);
-  }, [id]);
+  }, [id, number]);
 
   return (
     <div>
@@ -66,73 +88,33 @@ function TrackContent() {
       </div>
 
       {data ? (
-        <div className="tracking-layout">
-          <div className="tracking-map">
-            <div className="map-grid large" />
-            <div className="route-line big" />
-
-            <div className="track-pin start">
-              <MapPin size={19} />
-            </div>
-
-            <div className="track-pin rider">
-              <Truck size={19} />
-            </div>
-
-            <div className="track-pin end">
-              <MapPin size={19} />
-            </div>
-
-            <div className="track-map-label start-label">Pickup</div>
-
-            <div className="track-map-label rider-label">Rider</div>
-
-            <div className="track-map-label end-label">Delivery</div>
-          </div>
-
-          <div className="panel tracking-info">
-            <div className="section-kicker">TRACKING</div>
-
-            <h2>{data.shipment?.tracking_number}</h2>
-
-            <span className={`status big status-${data.shipment?.status}`}>
-              {String(data.shipment?.status || "").replaceAll("_", " ")}
-            </span>
-
-            <div className="track-locations">
-              <div>
-                <MapPin size={17} />
-
-                <span>
-                  <small>Pickup</small>
-                  {data.shipment?.pickup_city || "—"}
-                </span>
-              </div>
-
-              <div>
-                <Navigation size={17} />
-
-                <span>
-                  <small>Rider location</small>
-
-                  {data.rider_last_location
-                    ? `${Number(data.rider_last_location.lat).toFixed(
-                        5,
-                      )}, ${Number(data.rider_last_location.lng).toFixed(5)}`
-                    : "Not available yet"}
-                </span>
-              </div>
-
-              <div>
-                <MapPin size={17} />
-
-                <span>
-                  <small>Delivery</small>
-                  {data.shipment?.delivery_city || "—"}
-                </span>
-              </div>
-            </div>
-          </div>
+        <div className="tracking-map">
+          <ShipmentMap
+            pickup={
+              data.shipment?.pickup_lat
+                ? {
+                    lat: Number(data.shipment.pickup_lat),
+                    lng: Number(data.shipment.pickup_lng),
+                  }
+                : null
+            }
+            rider={
+              data.rider_last_location
+                ? {
+                    lat: Number(data.rider_last_location.lat),
+                    lng: Number(data.rider_last_location.lng),
+                  }
+                : null
+            }
+            delivery={
+              data.shipment?.delivery_lat
+                ? {
+                    lat: Number(data.shipment.delivery_lat),
+                    lng: Number(data.shipment.delivery_lng),
+                  }
+                : null
+            }
+          />
         </div>
       ) : (
         <div className="empty-state panel">

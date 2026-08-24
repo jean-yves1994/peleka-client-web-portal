@@ -18,7 +18,12 @@ function Inner() {
     if (!number.trim()) return;
     setBusy(true);
     try {
-      setData(await api.publicTrack(number.trim()));
+      const response = await api.publicTrack(number.trim());
+
+      // The public tracking endpoint returns:
+      // { success: true, data: { shipment, timeline } }
+      // Unwrap the standard Peleka API response before rendering.
+      setData(response?.data || response);
       setErr("");
     } catch (e) {
       setData(null);
