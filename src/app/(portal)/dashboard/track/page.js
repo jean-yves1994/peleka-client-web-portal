@@ -137,7 +137,7 @@ function TrackContent() {
 export default function Track() {
   return (
     <Suspense fallback={null}>
-      <TrackContent />
+      <Inner />
     </Suspense>
   );
 }
