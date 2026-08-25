@@ -367,3 +367,160 @@ body { -webkit-text-size-adjust: 100%; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+
+/* ============================================================
+   PELEKA PORTAL RESPONSIVE STRUCTURE — MOBILE FIRST
+   PortalShell controls .mobile-open and .open state classes.
+   ============================================================ */
+
+.portal {
+  display: flex;
+  height: 100vh;
+  min-height: 100vh;
+  overflow: hidden;
+  width: 100%;
+}
+
+.portal-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Mobile: sidebar is a true off-canvas drawer. */
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: min(84vw, 300px);
+  max-width: 300px;
+  height: 100vh;
+  height: 100dvh;
+  flex: none;
+  transform: translateX(-100%);
+  transition: transform 220ms ease;
+  z-index: 1000;
+  overflow-y: auto;
+  overflow-x: hidden;
+  visibility: visible;
+  box-sizing: border-box;
+}
+
+.sidebar.mobile-open {
+  transform: translateX(0);
+}
+
+/* Mobile navigation backdrop is inert and invisible until opened. */
+.mobile-nav-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: block;
+  background: rgba(15, 23, 42, 0.42);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 180ms ease, visibility 180ms ease;
+}
+
+.mobile-nav-backdrop.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Mobile header/menu is visible by default. */
+.mobile-menu-button {
+  display: inline-flex;
+}
+
+.sidebar-mobile-head {
+  display: flex;
+}
+
+/* Never render the desktop logo on top of the mobile logo. */
+.desktop-brand {
+  display: none;
+}
+
+/* Prevent long children from forcing the dashboard wider than the viewport. */
+.portal-main > * {
+  min-width: 0;
+}
+
+.portal-main img,
+.portal-main svg,
+.portal-main video {
+  max-width: 100%;
+}
+
+.portal-main table {
+  max-width: 100%;
+}
+
+/* ============================================================
+   DESKTOP — >= 768px
+   ============================================================ */
+
+@media (min-width: 768px) {
+  .portal {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .sidebar {
+    position: relative;
+    inset: auto;
+    width: 248px;
+    max-width: none;
+    height: 100vh;
+    height: 100dvh;
+    flex: 0 0 248px;
+    transform: translateX(0);
+    transition: none;
+    z-index: 10;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .portal-main {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .mobile-menu-button,
+  .sidebar-mobile-head,
+  .mobile-nav-backdrop {
+    display: none !important;
+  }
+
+  .desktop-brand {
+    display: flex;
+  }
+}
+
+/* Smaller mobile devices: slightly tighter content without changing structure. */
+@media (max-width: 374px) {
+  .portal-main {
+    width: 100%;
+  }
+
+  .sidebar {
+    width: min(88vw, 290px);
+  }
+}
+
+/* Respect users who prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .mobile-nav-backdrop {
+    transition: none;
+  }
+}
