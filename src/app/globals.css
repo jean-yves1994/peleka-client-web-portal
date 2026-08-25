@@ -1131,12 +1131,15 @@ td small {
 }
 
 /*I want the input inside the icon container to have the size of parent container */
+
 .input-with-icon input {
   border: 0 !important;
   padding: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
   width: 100%;
+  /*Input height should also match the parent container with thin border*/
+  height: 100%;
 }
 .check-row {
   display: flex;
