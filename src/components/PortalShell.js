@@ -7,6 +7,8 @@ import {
   CircleUserRound,
   LayoutDashboard,
   LogOut,
+  Menu,
+  X,
   MapPinned,
   Package,
   Plus,
@@ -30,6 +32,7 @@ export default function PortalShell({ children }) {
     router = useRouter();
   const [user, setUser] = useState(null);
   const [open, setOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   useEffect(() => {
     const u = getSavedUser();
     const token =
@@ -45,6 +48,17 @@ export default function PortalShell({ children }) {
 
     setUser(u);
   }, [path, router]);
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [path]);
+
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previous; };
+  }, [mobileNavOpen]);
+
   async function logout() {
     try {
       await api.logout(localStorage.getItem("peleka_refresh_token"));
@@ -60,8 +74,22 @@ export default function PortalShell({ children }) {
     );
   return (
     <div className="portal">
-      <aside className="sidebar">
-        <Link href="/" className="brand portal-brand">
+      {mobileNavOpen && (
+        <button
+          type="button"
+          className="sidebar-overlay"
+          aria-label="Close navigation"
+          onClick={() => setMobileNavOpen(false)}
+        />
+      )}
+      <aside className={`sidebar ${mobileNavOpen ? "mobile-open" : ""}`}>
+        <div className="sidebar-mobile-head">
+          <Link href="/" className="brand portal-brand">PELEKA<span>.</span></Link>
+          <button type="button" className="mobile-close" onClick={() => setMobileNavOpen(false)} aria-label="Close navigation">
+            <X size={20} />
+          </button>
+        </div>
+        <Link href="/" className="brand portal-brand desktop-sidebar-brand">
           PELEKA<span>.</span>
         </Link>
         <div className="side-label">CUSTOMER PORTAL</div>
@@ -92,7 +120,15 @@ export default function PortalShell({ children }) {
       </aside>
       <main className="portal-main">
         <header className="portal-top">
-          <div>
+          <div className="top-left-mobile">
+            <button
+              type="button"
+              className="mobile-menu-button"
+              onClick={() => setMobileNavOpen(true)}
+              aria-label="Open navigation"
+            >
+              <Menu size={20} />
+            </button>
             <div className="mobile-brand">
               PELEKA<span>.</span>
             </div>
