@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+
 const money = (n, c = "RWF") =>
   new Intl.NumberFormat("en-RW", {
     style: "currency",
@@ -26,51 +28,62 @@ function LocationBox({
   onSelect,
   onCurrent,
   disabled,
+  deviceLocation,
 }) {
-  const [results, setResults] = useState([]),
-    [busy, setBusy] = useState(false),
-    [searchError, setSearchError] = useState("");
-  const skipNextSearch = useRef(false);
+  const [results, setResults] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [searched, setSearched] = useState(false);
+
   useEffect(() => {
     const q = value.trim();
-    if (skipNextSearch.current) {
-      skipNextSearch.current = false;
-      setResults([]);
-      setBusy(false);
-      setSearchError("");
-      return;
-    }
     if (q.length < 2) {
       setResults([]);
-      setSearchError("");
+      setSearched(false);
       return;
     }
-    const t = setTimeout(async () => {
+
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
       setBusy(true);
+      setSearched(false);
       try {
-        const r = await api.searchLocations(q);
+        const r = await api.searchLocations(
+          q,
+          deviceLocation?.lat,
+          deviceLocation?.lng,
+        );
         const items = r?.data || r || [];
-        setResults(Array.isArray(items) ? items : []);
-        setSearchError(items.length ? "" : "No locations found. Try a landmark, street, district, or nearby place.");
-      } catch (e) {
-        setResults([]);
-        setSearchError(e.message || "Location search is temporarily unavailable.");
+        if (!controller.signal.aborted) {
+          setResults(Array.isArray(items) ? items : []);
+          setSearched(true);
+        }
+      } catch {
+        if (!controller.signal.aborted) {
+          setResults([]);
+          setSearched(true);
+        }
       } finally {
-        setBusy(false);
+        if (!controller.signal.aborted) setBusy(false);
       }
-    }, 350);
-    return () => clearTimeout(t);
-  }, [value]);
+    }, 300);
+
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [value, deviceLocation?.lat, deviceLocation?.lng]);
+
   return (
     <div className="location-box">
-      <label>{label} <b className="required-mark">*</b></label>
+      <label>{label} *</label>
       <div className="input-with-icon">
         <Search size={17} />
         <input
           disabled={disabled}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Search an address or place"
+          placeholder="Search a Peleka location or address"
+          autoComplete="off"
         />
       </div>
       <button
@@ -81,35 +94,68 @@ function LocationBox({
       >
         <Crosshair size={15} /> Use my current location
       </button>
-      {busy && <div className="location-results">Searching…</div>}
-      {!busy && searchError && results.length === 0 && (
-        <div className="location-search-message">{searchError}</div>
-      )}
-      {results.length > 0 && (
+
+      {(busy || searched) && (
         <div className="location-results">
-          {results.slice(0, 6).map((p, i) => (
-            <button
-              type="button"
-              key={p.place_id || i}
-              onClick={() => {
-                skipNextSearch.current = true;
-                onSelect(p);
-                setResults([]);
-                setSearchError("");
-              }}
-            >
-              <MapPin size={15} />
-              <span>
-                <strong>{p.description || p.address || p.name}</strong>
-                <small>{p.city || p.formatted_address || ""}</small>
-              </span>
-            </button>
-          ))}
+          {busy ? (
+            <div className="location-result-message">Searching…</div>
+          ) : results.length > 0 ? (
+            results.slice(0, 8).map((p, i) => (
+              <button
+                type="button"
+                key={p.place_id || p.id || i}
+                onClick={() => {
+                  onSelect(p);
+                  setResults([]);
+                  setSearched(false);
+                }}
+              >
+                <MapPin size={15} />
+                <span>
+                  <strong>{p.name || p.address || "Location"}</strong>
+                  <small>
+                    {[p.sector, p.district, p.city, p.address]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </small>
+                  {p.source === "known" && <em>Peleka location</em>}
+                </span>
+              </button>
+            ))
+          ) : (
+            <div className="location-result-message">
+              No matching Peleka location found. Try a fuller address.
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
+
+const quoteInputs = [
+  "sender_name",
+  "sender_phone",
+  "recipient_name",
+  "recipient_phone",
+  "pickup_address",
+  "pickup_city",
+  "pickup_lat",
+  "pickup_lng",
+  "pickup_notes",
+  "delivery_address",
+  "delivery_city",
+  "delivery_lat",
+  "delivery_lng",
+  "delivery_notes",
+  "parcel_description",
+  "parcel_category",
+  "parcel_weight_kg",
+  "parcel_declared_value",
+  "is_fragile",
+  "discount_code",
+];
+
 export default function NewShipment() {
   const [form, setForm] = useState({
     sender_name: "",
@@ -133,174 +179,246 @@ export default function NewShipment() {
     is_fragile: false,
     discount_code: "",
   });
-  const [quote, setQuote] = useState(null),
-    [quoteBusy, setQuoteBusy] = useState(false),
-    [createBusy, setCreateBusy] = useState(false),
-    [message, setMessage] = useState("");
-  const quoteRequestRef = useRef(0);
+  const [quote, setQuote] = useState(null);
+  const [quoteKey, setQuoteKey] = useState("");
+  const [quoteBusy, setQuoteBusy] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  const [deviceLocation, setDeviceLocation] = useState(null);
+  const quoteSequence = useRef(0);
+  const firstRender = useRef(true);
+
+  const currentFormKey = useMemo(
+    () =>
+      JSON.stringify(
+        quoteInputs.reduce((acc, key) => {
+          acc[key] = form[key];
+          return acc;
+        }, {}),
+      ),
+    [form],
+  );
+
+  const locationsReady =
+    Number.isFinite(Number(form.pickup_lat)) &&
+    Number.isFinite(Number(form.pickup_lng)) &&
+    Number.isFinite(Number(form.delivery_lat)) &&
+    Number.isFinite(Number(form.delivery_lng));
 
   function set(k, v) {
     setForm((f) => ({ ...f, [k]: v }));
-    // Any change makes the previous quote stale. The server will recalculate
-    // again when the shipment is actually created.
     setQuote(null);
+    setQuoteKey("");
+    setMessage("");
   }
 
   function setLocationText(prefix, value) {
     setForm((f) => ({
       ...f,
       [`${prefix}_address`]: value,
-      [`${prefix}_city`]: "",
+      // Never keep coordinates belonging to a previous address.
       [`${prefix}_lat`]: null,
       [`${prefix}_lng`]: null,
+      [`${prefix}_city`]: "",
     }));
     setQuote(null);
+    setQuoteKey("");
+    setMessage("");
   }
 
-  function validateForm() {
-    const required = [
-      ["Sender name", form.sender_name],
-      ["Sender phone", form.sender_phone],
-      ["Recipient name", form.recipient_name],
-      ["Recipient phone", form.recipient_phone],
-      ["Pickup location", form.pickup_address],
-      ["Delivery location", form.delivery_address],
-      ["Parcel description", form.parcel_description],
-    ];
-    const missing = required.find(([, value]) => !String(value || "").trim());
-    if (missing) {
-      setMessage(`${missing[0]} is required.`);
-      return false;
-    }
-    if (form.pickup_lat == null || form.pickup_lng == null) {
-      setMessage("Select a pickup location from the search results or use your current location.");
-      return false;
-    }
-    if (form.delivery_lat == null || form.delivery_lng == null) {
-      setMessage("Select a delivery location from the search results or use your current location.");
-      return false;
-    }
-    const weight = Number(form.parcel_weight_kg);
-    if (!Number.isFinite(weight) || weight <= 0) {
-      setMessage("Parcel weight must be greater than 0 kg.");
-      return false;
-    }
-    return true;
-  }
   function selectLocation(prefix, p) {
-    const lat = Number(p.lat);
-    const lng = Number(p.lng);
+    const lat = Number(p.lat ?? p.latitude);
+    const lng = Number(p.lng ?? p.longitude);
+
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-      setMessage("That location did not return valid coordinates. Please choose another result.");
+      setMessage("That location does not have valid coordinates. Please choose another result.");
       return;
     }
+
     setForm((f) => ({
       ...f,
       [`${prefix}_address`]:
-        p.description || p.formatted_address || p.address || p.name || "",
-      [`${prefix}_city`]: p.city || "",
+        p.address || p.formatted_address || p.name || "",
+      [`${prefix}_city`]: p.city || p.district || "",
       [`${prefix}_lat`]: lat,
       [`${prefix}_lng`]: lng,
     }));
     setQuote(null);
+    setQuoteKey("");
     setMessage("");
   }
-  async function current(prefix) {
-    if (!navigator.geolocation)
-      return setMessage("Location access is not available in this browser.");
+
+  function getDeviceLocationForSearch() {
+    if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          const p = await api.reverseLocation(
-            pos.coords.latitude,
-            pos.coords.longitude,
-          );
-          selectLocation(prefix, {
-            ...p,
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-          });
-        } catch {
-          setMessage("We couldn't identify your current location.");
-        }
-      },
-      () =>
-        setMessage(
-          "Please allow location access to use your current position.",
-        ),
+      (pos) =>
+        setDeviceLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        }),
+      () => {},
+      { enableHighAccuracy: false, timeout: 7000, maximumAge: 300000 },
     );
   }
-  async function refreshQuote(showErrors = true) {
-    if (form.pickup_lat == null || form.pickup_lng == null || form.delivery_lat == null || form.delivery_lng == null) {
-      setQuote(null);
+
+  useEffect(() => {
+    getDeviceLocationForSearch();
+  }, []);
+
+  async function current(prefix) {
+    if (!navigator.geolocation) {
+      setMessage("Location access is not available in this browser.");
       return;
     }
 
-    const requestId = ++quoteRequestRef.current;
+    setMessage("");
+    setBusy(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          setDeviceLocation({ lat, lng });
+          const p = await api.reverseLocation(lat, lng);
+          selectLocation(prefix, {
+            ...p?.data,
+            lat,
+            lng,
+          });
+        } catch (e) {
+          setMessage(e.message || "We couldn't identify your current location.");
+        } finally {
+          setBusy(false);
+        }
+      },
+      (err) => {
+        setBusy(false);
+        setMessage(
+          err.code === 1
+            ? "Please allow location access to use your current position."
+            : "We couldn't read your current location. Please search for the location instead.",
+        );
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 },
+    );
+  }
+
+  async function requestQuote(key = currentFormKey) {
+    if (!locationsReady) {
+      setQuote(null);
+      setQuoteKey("");
+      return;
+    }
+
+    const sequence = ++quoteSequence.current;
     setQuoteBusy(true);
-    if (showErrors) setMessage("");
 
     try {
       const q = await api.quote({
-        pickup_lat: form.pickup_lat,
-        pickup_lng: form.pickup_lng,
-        delivery_lat: form.delivery_lat,
-        delivery_lng: form.delivery_lng,
+        pickup_lat: Number(form.pickup_lat),
+        pickup_lng: Number(form.pickup_lng),
+        delivery_lat: Number(form.delivery_lat),
+        delivery_lng: Number(form.delivery_lng),
         pickup_city: form.pickup_city || undefined,
         delivery_city: form.delivery_city || undefined,
         discount_code: form.discount_code.trim() || undefined,
       });
-      if (requestId !== quoteRequestRef.current) return;
-      setQuote(q?.data || q);
+      const data = q?.data || q;
+      if (sequence === quoteSequence.current) {
+        setQuote(data);
+        setQuoteKey(key);
+      }
     } catch (e) {
-      if (requestId !== quoteRequestRef.current) return;
-      setQuote(null);
-      if (showErrors) setMessage(e.message || "Unable to calculate the current quote.");
+      if (sequence === quoteSequence.current) {
+        setQuote(null);
+        setQuoteKey("");
+        setMessage(e.message || "Unable to calculate the delivery quote.");
+      }
     } finally {
-      if (requestId === quoteRequestRef.current) setQuoteBusy(false);
+      if (sequence === quoteSequence.current) setQuoteBusy(false);
     }
   }
 
-  // Live pricing: after any form change, wait briefly for typing to settle and
-  // ask the backend for a fresh quote. The create endpoint recalculates again.
+  // A quote is refreshed whenever ANY shipment field changes. The backend only
+  // prices fields that affect the fare, but keeping the quote synchronized with
+  // the entire form prevents the UI from ever presenting an old quote.
   useEffect(() => {
-    if (form.pickup_lat == null || form.delivery_lat == null) {
-      setQuote(null);
-      setQuoteBusy(false);
+    if (firstRender.current) {
+      firstRender.current = false;
       return;
     }
-    const timer = setTimeout(() => refreshQuote(false), 500);
+    setQuote(null);
+    setQuoteKey("");
+    setMessage("");
+
+    if (!locationsReady) return;
+
+    const timer = setTimeout(() => requestQuote(currentFormKey), 500);
     return () => clearTimeout(timer);
-    // Form fields intentionally appear here because price/discount/location
-    // state must never be allowed to display an old quote.
-  }, [
-    form.sender_name, form.sender_phone, form.recipient_name, form.recipient_phone,
-    form.pickup_address, form.pickup_city, form.pickup_lat, form.pickup_lng,
-    form.pickup_notes, form.delivery_address, form.delivery_city, form.delivery_lat,
-    form.delivery_lng, form.delivery_notes, form.parcel_description, form.parcel_category,
-    form.parcel_weight_kg, form.parcel_declared_value, form.is_fragile, form.discount_code,
-  ]);
+    // currentFormKey is intentionally the dependency: every field in quoteInputs
+    // participates in the fingerprint.
+  }, [currentFormKey, locationsReady]);
+
+  function validateForm() {
+    const required = [
+      ["sender_name", "Sender name"],
+      ["sender_phone", "Sender phone"],
+      ["recipient_name", "Recipient name"],
+      ["recipient_phone", "Recipient phone"],
+      ["parcel_description", "Parcel description"],
+    ];
+
+    for (const [key, label] of required) {
+      if (!String(form[key] ?? "").trim()) {
+        return `${label} is required.`;
+      }
+    }
+
+    if (!locationsReady) {
+      return "Select both pickup and delivery locations from the search results, or use your current location.";
+    }
+
+    if (Number(form.pickup_lat) === Number(form.delivery_lat) && Number(form.pickup_lng) === Number(form.delivery_lng)) {
+      return "Pickup and delivery locations must be different.";
+    }
+
+    if (Number(form.parcel_weight_kg) <= 0) {
+      return "Parcel weight must be greater than 0 kg.";
+    }
+
+    if (form.parcel_declared_value !== "" && Number(form.parcel_declared_value) < 0) {
+      return "Declared value cannot be negative.";
+    }
+
+    return null;
+  }
 
   async function create() {
     setMessage("");
-    if (!validateForm()) return;
-    if (!quote) {
-      await refreshQuote(true);
+    const validationError = validateForm();
+    if (validationError) {
+      setMessage(validationError);
       return;
     }
 
-    setCreateBusy(true);
+    // Do not allow a stale quote to be used as the UI's confirmation state.
+    // The backend independently recalculates the authoritative amount anyway.
+    if (!quote || quoteKey !== currentFormKey) {
+      await requestQuote(currentFormKey);
+      return;
+    }
+
+    setBusy(true);
     try {
       const body = {
         ...form,
         parcel_weight_kg: Number(form.parcel_weight_kg || 1),
-        parcel_declared_value: form.parcel_declared_value
-          ? Number(form.parcel_declared_value)
-          : undefined,
+        parcel_declared_value:
+          form.parcel_declared_value !== ""
+            ? Number(form.parcel_declared_value)
+            : undefined,
         discount_code: form.discount_code.trim() || undefined,
       };
-      // Backend recalculates distance and price from coordinates. No quote
-      // value from the browser is sent or trusted.
       const r = await api.createShipment(body);
       const s = r?.data || r;
       window.location.href =
@@ -310,9 +428,10 @@ export default function NewShipment() {
     } catch (e) {
       setMessage(e.message || "Unable to create shipment.");
     } finally {
-      setCreateBusy(false);
+      setBusy(false);
     }
   }
+
   return (
     <div>
       <div className="page-title-row">
@@ -324,24 +443,26 @@ export default function NewShipment() {
           <p>Tell us where to pick up and where to deliver.</p>
         </div>
       </div>
+
       <div className="form-layout">
         <div className="form-main">
           <section className="panel form-section">
             <div className="form-section-head">
-              <div className="form-icon">
-                <MapPin size={19} />
-              </div>
+              <div className="form-icon"><MapPin size={19} /></div>
               <div>
                 <h2>Route</h2>
-                <p>Search a place or use your current location.</p>
+                <p>Choose a Peleka location or search an address.</p>
               </div>
             </div>
+
             <LocationBox
               label="Pickup location"
               value={form.pickup_address}
               onChange={(v) => setLocationText("pickup", v)}
               onSelect={(p) => selectLocation("pickup", p)}
               onCurrent={() => current("pickup")}
+              disabled={busy}
+              deviceLocation={deviceLocation}
             />
             <LocationBox
               label="Delivery location"
@@ -349,102 +470,48 @@ export default function NewShipment() {
               onChange={(v) => setLocationText("delivery", v)}
               onSelect={(p) => selectLocation("delivery", p)}
               onCurrent={() => current("delivery")}
+              disabled={busy}
+              deviceLocation={deviceLocation}
             />
+
             <div className="two-col">
-              <Field
-                label="Pickup notes"
-                value={form.pickup_notes}
-                onChange={(v) => set("pickup_notes", v)}
-                placeholder="Gate, floor, landmark…"
-              />
-              <Field
-                label="Delivery notes"
-                value={form.delivery_notes}
-                onChange={(v) => set("delivery_notes", v)}
-                placeholder="Gate, floor, landmark…"
-              />
+              <Field label="Pickup notes" value={form.pickup_notes} onChange={(v) => set("pickup_notes", v)} placeholder="Gate, floor, landmark…" />
+              <Field label="Delivery notes" value={form.delivery_notes} onChange={(v) => set("delivery_notes", v)} placeholder="Gate, floor, landmark…" />
             </div>
           </section>
+
           <section className="panel form-section">
             <div className="form-section-head">
-              <div className="form-icon">
-                <UserRound size={19} />
-              </div>
+              <div className="form-icon"><UserRound size={19} /></div>
               <div>
-                <h2>Recipient</h2>
-                <p>Who should receive the shipment?</p>
+                <h2>People</h2>
+                <p>Who is sending and receiving the shipment?</p>
               </div>
             </div>
             <div className="two-col">
-              <Field
-                required
-                label="Sender name"
-                value={form.sender_name}
-                onChange={(v) => set("sender_name", v)}
-              />
-              <Field
-                required
-                label="Sender phone"
-                value={form.sender_phone}
-                onChange={(v) => set("sender_phone", v)}
-              />
-              <Field
-                required
-                label="Recipient name"
-                value={form.recipient_name}
-                onChange={(v) => set("recipient_name", v)}
-              />
-              <Field
-                required
-                label="Recipient phone"
-                value={form.recipient_phone}
-                onChange={(v) => set("recipient_phone", v)}
-              />
+              <Field required label="Sender name" value={form.sender_name} onChange={(v) => set("sender_name", v)} />
+              <Field required label="Sender phone" value={form.sender_phone} onChange={(v) => set("sender_phone", v)} type="tel" />
+              <Field required label="Recipient name" value={form.recipient_name} onChange={(v) => set("recipient_name", v)} />
+              <Field required label="Recipient phone" value={form.recipient_phone} onChange={(v) => set("recipient_phone", v)} type="tel" />
             </div>
           </section>
+
           <section className="panel form-section">
             <div className="form-section-head">
-              <div className="form-icon">
-                <Package size={19} />
-              </div>
+              <div className="form-icon"><Package size={19} /></div>
               <div>
                 <h2>Parcel</h2>
                 <p>Basic information for the rider.</p>
               </div>
             </div>
             <div className="two-col">
-              <Field
-                required
-                label="Description"
-                value={form.parcel_description}
-                onChange={(v) => set("parcel_description", v)}
-                placeholder="e.g. Documents, clothes, electronics"
-              />
-              <Field
-                label="Category"
-                value={form.parcel_category}
-                onChange={(v) => set("parcel_category", v)}
-                placeholder="Optional"
-              />
-              <Field
-                label="Weight (kg)"
-                type="number"
-                value={form.parcel_weight_kg}
-                onChange={(v) => set("parcel_weight_kg", v)}
-              />
-              <Field
-                label="Declared value (RWF)"
-                type="number"
-                value={form.parcel_declared_value}
-                onChange={(v) => set("parcel_declared_value", v)}
-              />
+              <Field required label="Description" value={form.parcel_description} onChange={(v) => set("parcel_description", v)} placeholder="e.g. Documents, clothes, electronics" />
+              <Field label="Category" value={form.parcel_category} onChange={(v) => set("parcel_category", v)} placeholder="Optional" />
+              <Field required label="Weight (kg)" type="number" min="0.01" step="0.01" value={form.parcel_weight_kg} onChange={(v) => set("parcel_weight_kg", v)} />
+              <Field label="Declared value (RWF)" type="number" min="0" step="1" value={form.parcel_declared_value} onChange={(v) => set("parcel_declared_value", v)} />
             </div>
             <label className="check-row">
-              <input
-                type="checkbox"
-                checked={form.is_fragile}
-                onChange={(e) => set("is_fragile", e.target.checked)}
-              />
+              <input type="checkbox" checked={form.is_fragile} onChange={(e) => set("is_fragile", e.target.checked)} />
               <span>
                 <strong>Fragile parcel</strong>
                 <small>We'll flag this shipment for careful handling.</small>
@@ -452,72 +519,48 @@ export default function NewShipment() {
             </label>
           </section>
         </div>
+
         <aside className="quote-side">
           <div className="panel quote-panel">
-            <div className="section-kicker">DELIVERY QUOTE</div>
-            <h2>Know your price before you book.</h2>
+            <div className="section-kicker">LIVE DELIVERY QUOTE</div>
+            <h2>Your price updates as you complete the shipment.</h2>
+
             {quote ? (
               <>
                 <div className="quote-total">
                   <small>TOTAL</small>
-                  <strong>
-                    {money(quote.total_price, quote.currency || "RWF")}
-                  </strong>
+                  <strong>{money(quote.total_price, quote.currency || "RWF")}</strong>
                 </div>
                 <div className="quote-lines">
-                  <span>
-                    Distance <b>{Number(quote.distance_km || 0).toFixed(2)} km</b>
-                  </span>
-                  <span>
-                    Driving time <b>{Number(quote.duration_minutes || 0).toFixed(0)} min</b>
-                  </span>
-                  <span>
-                    Distance source <b>{quote.distance_source === "osrm" ? "Verified road route" : "Temporary estimate"}</b>
-                  </span>
-                  <span>
-                    Subtotal{" "}
-                    <b>{money(quote.subtotal, quote.currency || "RWF")}</b>
-                  </span>
+                  <span>Distance <b>{Number(quote.distance_km || 0).toFixed(2)} km</b></span>
+                  <span>Driving time <b>{Number(quote.duration_minutes || 0)} min</b></span>
+                  <span>Subtotal <b>{money(quote.subtotal, quote.currency || "RWF")}</b></span>
                   {Number(quote.discount_amount) > 0 && (
-                    <span>
-                      Discount{" "}
-                      <b>
-                        -{money(quote.discount_amount, quote.currency || "RWF")}
-                      </b>
-                    </span>
+                    <span>Discount <b>-{money(quote.discount_amount, quote.currency || "RWF")}</b></span>
                   )}
                 </div>
               </>
             ) : (
               <div className="quote-placeholder">
                 <Tag size={22} />
-                <span>Complete your locations, then calculate the quote.</span>
+                <span>{locationsReady ? "Calculating your live quote…" : "Select both locations to calculate your live quote."}</span>
               </div>
             )}
-            <Field
-              label="Discount code"
-              value={form.discount_code}
-              onChange={(v) => set("discount_code", v)}
-              placeholder="Optional"
-            />
-            {quoteBusy && (
-              <div className="quote-live-status">Updating live quote…</div>
-            )}
-            {quote && quote.distance_source !== "osrm" && !quoteBusy && (
-              <div className="quote-warning">Driving distance is not verified yet. We will not create a billable shipment until the road distance can be confirmed.</div>
-            )}
+
+            <Field label="Discount code" value={form.discount_code} onChange={(v) => set("discount_code", v)} placeholder="Optional" />
+
+            {quoteBusy && <div className="quote-refresh">Updating quote…</div>}
+
             <button
+              type="button"
               className="button button-dark full"
               onClick={create}
-              disabled={createBusy || quoteBusy || !quote || quote.distance_source !== "osrm"}
+              disabled={busy || quoteBusy || !locationsReady || !quote || quoteKey !== currentFormKey}
             >
-              {createBusy
-                ? "Creating shipment…"
-                : quoteBusy
-                  ? "Updating price…"
-                  : "Create shipment"}{" "}
+              {busy ? "Creating shipment…" : quoteBusy ? "Updating quote…" : "Create shipment"}
               <ArrowRight size={16} />
             </button>
+
             {message && <div className="form-error">{message}</div>}
           </div>
         </aside>
@@ -525,6 +568,7 @@ export default function NewShipment() {
     </div>
   );
 }
+
 function Field({
   label,
   value,
@@ -532,18 +576,20 @@ function Field({
   placeholder,
   type = "text",
   required = false,
+  min,
+  step,
 }) {
   return (
     <label className="field">
-      <span>
-        {label}
-        {required && " *"}
-      </span>
+      <span>{label}{required && " *"}</span>
       <input
         type={type}
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder || ""}
+        required={required}
+        min={min}
+        step={step}
       />
     </label>
   );

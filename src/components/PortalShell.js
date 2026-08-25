@@ -1,4 +1,5 @@
 "use client";
+
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -7,14 +8,13 @@ import {
   CircleUserRound,
   LayoutDashboard,
   LogOut,
-  Menu,
-  X,
   MapPinned,
+  Menu,
   Package,
   Plus,
   ReceiptText,
   Settings2,
-  Truck,
+  X,
 } from "lucide-react";
 import { clearAuth, getSavedUser, api } from "@/lib/api";
 import { useEffect, useState } from "react";
@@ -28,11 +28,12 @@ const nav = [
 ];
 
 export default function PortalShell({ children }) {
-  const path = usePathname(),
-    router = useRouter();
+  const path = usePathname();
+  const router = useRouter();
   const [user, setUser] = useState(null);
   const [open, setOpen] = useState(false);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [mobileNav, setMobileNav] = useState(false);
+
   useEffect(() => {
     const u = getSavedUser();
     const token =
@@ -45,19 +46,12 @@ export default function PortalShell({ children }) {
       router.replace(`/login?redirect=${encodeURIComponent(redirect)}`);
       return;
     }
-
     setUser(u);
   }, [path, router]);
-  useEffect(() => {
-    setMobileNavOpen(false);
-  }, [path]);
 
   useEffect(() => {
-    if (!mobileNavOpen) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = previous; };
-  }, [mobileNavOpen]);
+    setMobileNav(false);
+  }, [path]);
 
   async function logout() {
     try {
@@ -66,80 +60,64 @@ export default function PortalShell({ children }) {
     clearAuth();
     router.replace("/login");
   }
-  if (!user)
-    return (
-      <div className="loading-screen">
-        <div className="spinner" />
-      </div>
-    );
+
+  if (!user) {
+    return <div className="loading-screen"><div className="spinner" /></div>;
+  }
+
   return (
     <div className="portal">
-      {mobileNavOpen && (
-        <button
-          type="button"
-          className="sidebar-overlay"
-          aria-label="Close navigation"
-          onClick={() => setMobileNavOpen(false)}
-        />
-      )}
-      <aside className={`sidebar ${mobileNavOpen ? "mobile-open" : ""}`}>
+      <div
+        className={`mobile-nav-backdrop ${mobileNav ? "open" : ""}`}
+        onClick={() => setMobileNav(false)}
+        aria-hidden="true"
+      />
+
+      <aside className={`sidebar ${mobileNav ? "mobile-open" : ""}`}>
         <div className="sidebar-mobile-head">
           <Link href="/" className="brand portal-brand">PELEKA<span>.</span></Link>
-          <button type="button" className="mobile-close" onClick={() => setMobileNavOpen(false)} aria-label="Close navigation">
+          <button className="mobile-close" onClick={() => setMobileNav(false)} aria-label="Close menu">
             <X size={20} />
           </button>
         </div>
-        <Link href="/" className="brand portal-brand desktop-sidebar-brand">
-          PELEKA<span>.</span>
-        </Link>
+
+        <Link href="/" className="brand portal-brand desktop-brand">PELEKA<span>.</span></Link>
         <div className="side-label">CUSTOMER PORTAL</div>
         <nav className="side-nav">
           {nav.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}
               href={href}
-              className={
-                path === href || (href != "/dashboard" && path.startsWith(href))
-                  ? "active"
-                  : ""
-              }
+              className={path === href || (href !== "/dashboard" && path.startsWith(href)) ? "active" : ""}
             >
               <Icon size={18} />
-              {label}
+              <span>{label}</span>
             </Link>
           ))}
         </nav>
         <div className="side-bottom">
           <Link href="/dashboard/shipments/new" className="side-new">
-            <Plus size={17} /> New shipment
+            <Plus size={17} /> <span>New shipment</span>
           </Link>
           <button className="side-logout" onClick={logout}>
-            <LogOut size={17} /> Sign out
+            <LogOut size={17} /> <span>Sign out</span>
           </button>
         </div>
       </aside>
+
       <main className="portal-main">
         <header className="portal-top">
-          <div className="top-left-mobile">
-            <button
-              type="button"
-              className="mobile-menu-button"
-              onClick={() => setMobileNavOpen(true)}
-              aria-label="Open navigation"
-            >
+          <div className="top-left">
+            <button className="mobile-menu-button" onClick={() => setMobileNav(true)} aria-label="Open menu">
               <Menu size={20} />
             </button>
-            <div className="mobile-brand">
-              PELEKA<span>.</span>
-            </div>
+            <div className="mobile-brand">PELEKA<span>.</span></div>
           </div>
           <div className="top-actions">
-            <Link href="/dashboard/notifications" className="icon-button">
-              <Bell size={18} />
-            </Link>
+            <Link href="/dashboard/notifications" className="icon-button"><Bell size={18} /></Link>
             <button className="profile-menu" onClick={() => setOpen(!open)}>
               <CircleUserRound size={19} />
-              <span>{user.full_name || "Customer"}</span>
+              <span className="profile-name">{user.full_name || "Customer"}</span>
               <ChevronDown size={15} />
             </button>
             {open && (
