@@ -95,10 +95,8 @@ export default function NewShipment() {
   const [form, setForm] = useState({
     sender_name: "",
     sender_phone: "",
-    sender_email: "",
     recipient_name: "",
     recipient_phone: "",
-    recipient_email: "",
     pickup_address: "",
     pickup_city: "",
     pickup_lat: null,
