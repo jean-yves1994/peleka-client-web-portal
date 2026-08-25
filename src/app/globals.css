@@ -1118,29 +1118,42 @@ td small {
   border-color: #a88d76;
   box-shadow: 0 0 0 3px #b58c6e1c;
 }
+
 .input-with-icon {
   display: flex;
   align-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 44px;
   gap: 8px;
+  box-sizing: border-box;
   border: 1px solid #dcd5cf;
   border-radius: 11px;
   background: #fcfbfa;
   padding: 0 12px;
-  height: 44px;
   color: #8a8179;
 }
-
-/*I want the input inside the icon container to have the size of parent container */
-
 .input-with-icon input {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
   border: 0 !important;
+  outline: 0 !important;
   padding: 0 !important;
+  margin: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
-  width: 100%;
-  /*Input height should also match the parent container with thin border*/
-  height: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  color: inherit;
 }
+.input-with-icon input:focus {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+
 .check-row {
   display: flex;
   gap: 10px;
