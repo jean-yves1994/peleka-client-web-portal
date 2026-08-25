@@ -231,14 +231,15 @@ export default function NewShipment() {
     const lng = Number(p.lng ?? p.longitude);
 
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-      setMessage("That location does not have valid coordinates. Please choose another result.");
+      setMessage(
+        "That location does not have valid coordinates. Please choose another result.",
+      );
       return;
     }
 
     setForm((f) => ({
       ...f,
-      [`${prefix}_address`]:
-        p.address || p.formatted_address || p.name || "",
+      [`${prefix}_address`]: p.address || p.formatted_address || p.name || "",
       [`${prefix}_city`]: p.city || p.district || "",
       [`${prefix}_lat`]: lat,
       [`${prefix}_lng`]: lng,
@@ -286,7 +287,9 @@ export default function NewShipment() {
             lng,
           });
         } catch (e) {
-          setMessage(e.message || "We couldn't identify your current location.");
+          setMessage(
+            e.message || "We couldn't identify your current location.",
+          );
         } finally {
           setBusy(false);
         }
@@ -378,7 +381,10 @@ export default function NewShipment() {
       return "Select both pickup and delivery locations from the search results, or use your current location.";
     }
 
-    if (Number(form.pickup_lat) === Number(form.delivery_lat) && Number(form.pickup_lng) === Number(form.delivery_lng)) {
+    if (
+      Number(form.pickup_lat) === Number(form.delivery_lat) &&
+      Number(form.pickup_lng) === Number(form.delivery_lng)
+    ) {
       return "Pickup and delivery locations must be different.";
     }
 
@@ -386,7 +392,10 @@ export default function NewShipment() {
       return "Parcel weight must be greater than 0 kg.";
     }
 
-    if (form.parcel_declared_value !== "" && Number(form.parcel_declared_value) < 0) {
+    if (
+      form.parcel_declared_value !== "" &&
+      Number(form.parcel_declared_value) < 0
+    ) {
       return "Declared value cannot be negative.";
     }
 
@@ -448,10 +457,12 @@ export default function NewShipment() {
         <div className="form-main">
           <section className="panel form-section">
             <div className="form-section-head">
-              <div className="form-icon"><MapPin size={19} /></div>
+              <div className="form-icon">
+                <MapPin size={19} />
+              </div>
               <div>
                 <h2>Route</h2>
-                <p>Choose a Peleka location or search an address.</p>
+                <p>Search for a location</p>
               </div>
             </div>
 
@@ -475,43 +486,109 @@ export default function NewShipment() {
             />
 
             <div className="two-col">
-              <Field label="Pickup notes" value={form.pickup_notes} onChange={(v) => set("pickup_notes", v)} placeholder="Gate, floor, landmark…" />
-              <Field label="Delivery notes" value={form.delivery_notes} onChange={(v) => set("delivery_notes", v)} placeholder="Gate, floor, landmark…" />
+              <Field
+                label="Pickup notes"
+                value={form.pickup_notes}
+                onChange={(v) => set("pickup_notes", v)}
+                placeholder="Gate, floor, landmark…"
+              />
+              <Field
+                label="Delivery notes"
+                value={form.delivery_notes}
+                onChange={(v) => set("delivery_notes", v)}
+                placeholder="Gate, floor, landmark…"
+              />
             </div>
           </section>
 
           <section className="panel form-section">
             <div className="form-section-head">
-              <div className="form-icon"><UserRound size={19} /></div>
+              <div className="form-icon">
+                <UserRound size={19} />
+              </div>
               <div>
                 <h2>People</h2>
                 <p>Who is sending and receiving the shipment?</p>
               </div>
             </div>
             <div className="two-col">
-              <Field required label="Sender name" value={form.sender_name} onChange={(v) => set("sender_name", v)} />
-              <Field required label="Sender phone" value={form.sender_phone} onChange={(v) => set("sender_phone", v)} type="tel" />
-              <Field required label="Recipient name" value={form.recipient_name} onChange={(v) => set("recipient_name", v)} />
-              <Field required label="Recipient phone" value={form.recipient_phone} onChange={(v) => set("recipient_phone", v)} type="tel" />
+              <Field
+                required
+                label="Sender name"
+                value={form.sender_name}
+                onChange={(v) => set("sender_name", v)}
+              />
+              <Field
+                required
+                label="Sender phone"
+                value={form.sender_phone}
+                onChange={(v) => set("sender_phone", v)}
+                type="tel"
+              />
+              <Field
+                required
+                label="Recipient name"
+                value={form.recipient_name}
+                onChange={(v) => set("recipient_name", v)}
+              />
+              <Field
+                required
+                label="Recipient phone"
+                value={form.recipient_phone}
+                onChange={(v) => set("recipient_phone", v)}
+                type="tel"
+              />
             </div>
           </section>
 
           <section className="panel form-section">
             <div className="form-section-head">
-              <div className="form-icon"><Package size={19} /></div>
+              <div className="form-icon">
+                <Package size={19} />
+              </div>
               <div>
                 <h2>Parcel</h2>
                 <p>Basic information for the rider.</p>
               </div>
             </div>
             <div className="two-col">
-              <Field required label="Description" value={form.parcel_description} onChange={(v) => set("parcel_description", v)} placeholder="e.g. Documents, clothes, electronics" />
-              <Field label="Category" value={form.parcel_category} onChange={(v) => set("parcel_category", v)} placeholder="Optional" />
-              <Field required label="Weight (kg)" type="number" min="0.01" step="0.01" value={form.parcel_weight_kg} onChange={(v) => set("parcel_weight_kg", v)} />
-              <Field label="Declared value (RWF)" type="number" min="0" step="1" value={form.parcel_declared_value} onChange={(v) => set("parcel_declared_value", v)} />
+              <Field
+                required
+                label="Description"
+                value={form.parcel_description}
+                onChange={(v) => set("parcel_description", v)}
+                placeholder="e.g. Documents, clothes, electronics"
+              />
+              <Field
+                label="Category"
+                value={form.parcel_category}
+                onChange={(v) => set("parcel_category", v)}
+                placeholder="Optional"
+              />
+              <Field
+                required
+                label="Weight (kg)"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={form.parcel_weight_kg}
+                onChange={(v) => set("parcel_weight_kg", v)}
+              />
+              <Field
+                label="Declared value (RWF)"
+                type="number"
+                min="0"
+                step="1"
+                value={form.parcel_declared_value}
+                onChange={(v) => set("parcel_declared_value", v)}
+              />
             </div>
             <label className="check-row">
-              <input type="checkbox" checked={form.is_fragile} onChange={(e) => set("is_fragile", e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={form.is_fragile}
+                onChange={(e) => set("is_fragile", e.target.checked)}
+              />
               <span>
                 <strong>Fragile parcel</strong>
                 <small>We'll flag this shipment for careful handling.</small>
@@ -529,25 +606,50 @@ export default function NewShipment() {
               <>
                 <div className="quote-total">
                   <small>TOTAL</small>
-                  <strong>{money(quote.total_price, quote.currency || "RWF")}</strong>
+                  <strong>
+                    {money(quote.total_price, quote.currency || "RWF")}
+                  </strong>
                 </div>
                 <div className="quote-lines">
-                  <span>Distance <b>{Number(quote.distance_km || 0).toFixed(2)} km</b></span>
-                  <span>Driving time <b>{Number(quote.duration_minutes || 0)} min</b></span>
-                  <span>Subtotal <b>{money(quote.subtotal, quote.currency || "RWF")}</b></span>
+                  <span>
+                    Distance{" "}
+                    <b>{Number(quote.distance_km || 0).toFixed(2)} km</b>
+                  </span>
+                  <span>
+                    Driving time{" "}
+                    <b>{Number(quote.duration_minutes || 0)} min</b>
+                  </span>
+                  <span>
+                    Subtotal{" "}
+                    <b>{money(quote.subtotal, quote.currency || "RWF")}</b>
+                  </span>
                   {Number(quote.discount_amount) > 0 && (
-                    <span>Discount <b>-{money(quote.discount_amount, quote.currency || "RWF")}</b></span>
+                    <span>
+                      Discount{" "}
+                      <b>
+                        -{money(quote.discount_amount, quote.currency || "RWF")}
+                      </b>
+                    </span>
                   )}
                 </div>
               </>
             ) : (
               <div className="quote-placeholder">
                 <Tag size={22} />
-                <span>{locationsReady ? "Calculating your live quote…" : "Select both locations to calculate your live quote."}</span>
+                <span>
+                  {locationsReady
+                    ? "Calculating your live quote…"
+                    : "Select both locations to calculate your live quote."}
+                </span>
               </div>
             )}
 
-            <Field label="Discount code" value={form.discount_code} onChange={(v) => set("discount_code", v)} placeholder="Optional" />
+            <Field
+              label="Discount code"
+              value={form.discount_code}
+              onChange={(v) => set("discount_code", v)}
+              placeholder="Optional"
+            />
 
             {quoteBusy && <div className="quote-refresh">Updating quote…</div>}
 
@@ -555,9 +657,19 @@ export default function NewShipment() {
               type="button"
               className="button button-dark full"
               onClick={create}
-              disabled={busy || quoteBusy || !locationsReady || !quote || quoteKey !== currentFormKey}
+              disabled={
+                busy ||
+                quoteBusy ||
+                !locationsReady ||
+                !quote ||
+                quoteKey !== currentFormKey
+              }
             >
-              {busy ? "Creating shipment…" : quoteBusy ? "Updating quote…" : "Create shipment"}
+              {busy
+                ? "Creating shipment…"
+                : quoteBusy
+                  ? "Updating quote…"
+                  : "Create shipment"}
               <ArrowRight size={16} />
             </button>
 
@@ -581,7 +693,10 @@ function Field({
 }) {
   return (
     <label className="field">
-      <span>{label}{required && " *"}</span>
+      <span>
+        {label}
+        {required && " *"}
+      </span>
       <input
         type={type}
         value={value ?? ""}
