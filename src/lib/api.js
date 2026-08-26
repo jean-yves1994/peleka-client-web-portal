@@ -35,6 +35,24 @@ export function getSavedUser() {
     return null;
   }
 }
+
+function redirectToLoginOnExpiredSession(path) {
+  if (typeof window === "undefined") return;
+
+  // Never replace the login page with another login redirect.
+  if (window.location.pathname === "/login") return;
+
+  clearAuth();
+
+  const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  const redirect = `/login?redirect=${encodeURIComponent(currentPath)}`;
+
+  // Prevent several simultaneous 401 responses from causing multiple redirects.
+  if (window.__pelekaSessionRedirecting) return;
+  window.__pelekaSessionRedirecting = true;
+  window.location.replace(redirect);
+}
+
 async function request(path, options = {}) {
   const token = getToken();
   const headers = {
@@ -44,16 +62,34 @@ async function request(path, options = {}) {
     ...(options.headers || {}),
   };
   if (token) headers.Authorization = `Bearer ${token}`;
+
   const res = await fetch(`${BASE}${path}`, {
     ...options,
     headers,
     cache: "no-store",
   });
+
   let data = null;
   try {
     data = await res.json();
   } catch {}
+
   if (!res.ok) {
+    // An expired/invalid access token must never leave the user looking at
+    // an empty dashboard. Clear the stale session and return to login.
+    // Authentication endpoints are excluded because a 401 there is a normal
+    // login/credential error and should remain visible on that page.
+    const isAuthEndpoint =
+      path === "/auth/login" ||
+      path === "/auth/register" ||
+      path === "/auth/forgot-password" ||
+      path.startsWith("/auth/password-reset/") ||
+      path === "/auth/reset-password";
+
+    if (res.status === 401 && !isAuthEndpoint) {
+      redirectToLoginOnExpiredSession(path);
+    }
+
     const message =
       data?.error?.message ||
       data?.message ||
@@ -64,8 +100,10 @@ async function request(path, options = {}) {
     err.data = data;
     throw err;
   }
+
   return data;
 }
+
 export const api = {
   login: (body) =>
     request("/auth/login", { method: "POST", body: JSON.stringify(body) }),
