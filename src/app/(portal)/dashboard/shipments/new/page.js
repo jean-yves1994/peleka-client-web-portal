@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Crosshair, MapPin, Package, Search, Tag, UserRound } from "lucide-react";
 import Link from "next/link";
+import { api } from "@/lib/api";
 import LocationVerification from "@/components/locations/LocationVerification";
 
 const money = (n, c = "RWF") => new Intl.NumberFormat("en-RW", { style: "currency", currency: c, maximumFractionDigits: 0 }).format(Number(n || 0));
@@ -14,8 +15,6 @@ function LocationBox({ label, value, onChange, onSelect, onCurrent, disabled, de
   const [selectionLocked, setSelectionLocked] = useState(false);
 
   useEffect(() => {
-    // A selected/current location is already a valid candidate. Do not search
-    // its display label again and incorrectly turn it into a "no results" state.
     if (selectionLocked) return;
     const q = value.trim();
     if (q.length < 2) { setResults([]); setSearched(false); return; }
@@ -34,14 +33,11 @@ function LocationBox({ label, value, onChange, onSelect, onCurrent, disabled, de
   }, [value, deviceLocation?.lat, deviceLocation?.lng, selectionLocked]);
 
   function handleChange(nextValue) {
-    // Editing the field starts a new search session.
     setSelectionLocked(false);
     onChange(nextValue);
   }
 
   function handleSelect(p) {
-    // Lock the selected candidate before the parent updates the displayed
-    // address, preventing a second search against the selected label.
     setSelectionLocked(true);
     setResults([]);
     setSearched(false);
@@ -49,8 +45,6 @@ function LocationBox({ label, value, onChange, onSelect, onCurrent, disabled, de
   }
 
   function handleCurrent() {
-    // Current-location flow also updates the input later after reverse
-    // geocoding, so keep it out of the text-search lifecycle.
     setSelectionLocked(true);
     setResults([]);
     setSearched(false);
