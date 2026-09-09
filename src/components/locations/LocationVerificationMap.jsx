@@ -20,52 +20,62 @@ function Recenter({ position }) {
   }, [map, position]);
   return null;
 }
-function ClickHandler({ onMove }) {
-  useMapEvents({ click: (event) => onMove([event.latlng.lat, event.latlng.lng]) });
+
+function ClickHandler({ onMove, disabled }) {
+  useMapEvents({
+    click: (event) => {
+      if (!disabled) onMove([event.latlng.lat, event.latlng.lng]);
+    },
+  });
   return null;
 }
 
-export default function LocationVerificationMap({ initialLat, initialLng, label = "Location", onConfirm, onCancel, disabled = false }) {
+export default function LocationVerificationMap({ initialLat, initialLng, label = "Location", onPositionChange, disabled = false }) {
   const initial = useMemo(() => {
     const lat = Number(initialLat), lng = Number(initialLng);
     return Number.isFinite(lat) && Number.isFinite(lng) ? [lat, lng] : DEFAULT_CENTER;
   }, [initialLat, initialLng]);
   const [position, setPosition] = useState(initial);
-  const [busy, setBusy] = useState(false);
+
   useEffect(() => setPosition(initial), [initial]);
 
-  async function confirm() {
-    if (disabled || busy) return;
-    setBusy(true);
-    try { await onConfirm({ lat: position[0], lng: position[1] }); }
-    finally { setBusy(false); }
+  function move(next) {
+    if (disabled) return;
+    setPosition(next);
+    onPositionChange?.({ lat: next[0], lng: next[1] });
   }
 
   return (
     <div className="location-verification" style={{ width: "100%" }}>
       <div className="location-verification-head">
         <div>
-          <strong>Confirm {label.toLowerCase()}</strong>
-          <p>Move the pin to the exact pickup/delivery point. The final pin is used for routing and pricing.</p>
+          <strong>Set the exact {label.toLowerCase()}</strong>
+          <p>Search results only set the starting point. Drag the pin or tap the map to the exact pickup/delivery point.</p>
         </div>
-        <button type="button" className="location-verification-close" onClick={onCancel} disabled={disabled || busy} aria-label="Close">×</button>
       </div>
 
       <div className="location-verification-map" style={{ height: "min(55vh, 420px)", minHeight: 300, width: "100%", overflow: "hidden", borderRadius: 16 }}>
         <MapContainer center={position} zoom={16} scrollWheelZoom style={{ height: "100%", width: "100%" }}>
           <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <Recenter position={position} />
-          <ClickHandler onMove={setPosition} />
-          <Marker position={position} icon={markerIcon} draggable={!disabled && !busy} eventHandlers={{ dragend: (event) => { const p = event.target.getLatLng(); setPosition([p.lat, p.lng]); } }} />
+          <ClickHandler onMove={move} disabled={disabled} />
+          <Marker
+            position={position}
+            icon={markerIcon}
+            draggable={!disabled}
+            eventHandlers={{
+              dragend: (event) => {
+                const p = event.target.getLatLng();
+                move([p.lat, p.lng]);
+              },
+            }}
+          />
         </MapContainer>
       </div>
 
-      <div className="location-verification-actions" style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-        <span>Exact point: {position[0].toFixed(6)}, {position[1].toFixed(6)}</span>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button type="button" className="btn-secondary" onClick={onCancel} disabled={disabled || busy}>Cancel</button>
-          <button type="button" className="btn-primary" onClick={confirm} disabled={disabled || busy}>{busy ? "Verifying…" : "Confirm exact location"}</button>
-        </div>
+      <div className="location-verification-actions" style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap", marginTop: 10 }}>
+        <span>Pin: {position[0].toFixed(6)}, {position[1].toFixed(6)}</span>
+        <span style={{ fontSize: 13, opacity: 0.75 }}>Drag the pin or tap the map</span>
       </div>
     </div>
   );
