@@ -10,14 +10,7 @@ const VerificationMap = dynamic(() => import("./LocationVerificationMap"), {
   loading: () => <div style={{ minHeight: 320, display: "grid", placeItems: "center" }}>Loading map…</div>,
 });
 
-export default function LocationVerification({
-  open,
-  label,
-  candidate,
-  inputText,
-  onCancel,
-  onConfirm,
-}) {
+export default function LocationVerification({ open, label, candidate, inputText, onCancel, onConfirm }) {
   const initial = useMemo(() => ({
     lat: Number(candidate?.lat ?? candidate?.latitude),
     lng: Number(candidate?.lng ?? candidate?.longitude),
@@ -31,7 +24,7 @@ export default function LocationVerification({
     setPoint(initial);
     setResolved(candidate || null);
     setError("");
-  }, [initial.lat, initial.lng, candidate]);
+  }, [initial, candidate]);
 
   if (!open) return null;
 
@@ -42,22 +35,9 @@ export default function LocationVerification({
     try {
       const r = await api.reverseLocation(nextPoint.lat, nextPoint.lng);
       const data = r?.data || r || {};
-      setResolved({
-        ...candidate,
-        ...data,
-        lat: nextPoint.lat,
-        lng: nextPoint.lng,
-        source: "search_then_pin",
-        verification_required: false,
-      });
+      setResolved({ ...candidate, ...data, lat: nextPoint.lat, lng: nextPoint.lng, source: "search_then_pin" });
     } catch (e) {
-      setResolved((current) => ({
-        ...current,
-        lat: nextPoint.lat,
-        lng: nextPoint.lng,
-        source: "search_then_pin",
-        verification_required: false,
-      }));
+      setResolved((current) => ({ ...current, lat: nextPoint.lat, lng: nextPoint.lng, source: "search_then_pin" }));
       setError(e.message || "We could not refresh the address for this pin. You can still confirm the exact point.");
     } finally {
       setResolving(false);
@@ -69,15 +49,7 @@ export default function LocationVerification({
       setError("Please place the pin on a valid location.");
       return;
     }
-    onConfirm({
-      ...resolved,
-      lat: point.lat,
-      lng: point.lng,
-      input_text: inputText,
-      confirmed_by_user: true,
-      source: "search_then_pin",
-      verification_required: false,
-    });
+    onConfirm({ ...resolved, lat: point.lat, lng: point.lng, input_text: inputText, confirmed_by_user: true, source: "search_then_pin", verification_required: false });
   }
 
   return (
@@ -89,16 +61,16 @@ export default function LocationVerification({
             <h3>Confirm {label.toLowerCase()}</h3>
             <p>Move the pin to the exact pickup or delivery point. Pricing will use the confirmed coordinates.</p>
           </div>
-          <button type="button" className="location-verification-close" onClick={onCancel} aria-label="Close">
-            <X size={18} />
-          </button>
+          <button type="button" className="location-verification-close" onClick={onCancel} aria-label="Close"><X size={18} /></button>
         </div>
 
         <div className="location-verification-map-wrap">
           <VerificationMap
-            latitude={point.lat}
-            longitude={point.lng}
-            onPointChange={resolvePoint}
+            initialLat={point.lat}
+            initialLng={point.lng}
+            label={label}
+            onConfirm={resolvePoint}
+            onCancel={onCancel}
           />
         </div>
 
@@ -107,10 +79,7 @@ export default function LocationVerification({
             <strong>{resolved?.address || resolved?.formatted_address || resolved?.name || inputText || "Selected location"}</strong>
             <span>{[resolved?.sector, resolved?.district, resolved?.city].filter(Boolean).join(" · ")}</span>
           </div>
-          <div className="location-verification-coords">
-            <span>{point.lat.toFixed(6)}</span>
-            <span>{point.lng.toFixed(6)}</span>
-          </div>
+          <div className="location-verification-coords"><span>{point.lat.toFixed(6)}</span><span>{point.lng.toFixed(6)}</span></div>
         </div>
 
         {error && <div className="location-verification-error">{error}</div>}
@@ -118,7 +87,7 @@ export default function LocationVerification({
         <div className="location-verification-actions">
           <button type="button" className="btn-secondary" onClick={onCancel}>Cancel</button>
           <button type="button" className="btn-primary" onClick={confirm} disabled={resolving}>
-            {resolving ? <><Loader2 size={16} className="spin" /> Updating…</> : <><Check size={16} /> Confirm exact location</>}
+            {resolving ? <><Loader2 size={16} /> Updating…</> : <><Check size={16} /> Confirm exact location</>}
           </button>
         </div>
       </div>
