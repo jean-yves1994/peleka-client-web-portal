@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Crosshair, MapPin, Package, Search, Tag, UserRound } from "lucide-react";
 import Link from "next/link";
-import { api } from "@/lib/api";
 import LocationVerification from "@/components/locations/LocationVerification";
 
 const money = (n, c = "RWF") => new Intl.NumberFormat("en-RW", { style: "currency", currency: c, maximumFractionDigits: 0 }).format(Number(n || 0));
@@ -12,7 +11,12 @@ function LocationBox({ label, value, onChange, onSelect, onCurrent, disabled, de
   const [results, setResults] = useState([]);
   const [busy, setBusy] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [selectionLocked, setSelectionLocked] = useState(false);
+
   useEffect(() => {
+    // A selected/current location is already a valid candidate. Do not search
+    // its display label again and incorrectly turn it into a "no results" state.
+    if (selectionLocked) return;
     const q = value.trim();
     if (q.length < 2) { setResults([]); setSearched(false); return; }
     const controller = new AbortController();
@@ -27,18 +31,43 @@ function LocationBox({ label, value, onChange, onSelect, onCurrent, disabled, de
       } finally { if (!controller.signal.aborted) setBusy(false); }
     }, 300);
     return () => { controller.abort(); clearTimeout(timer); };
-  }, [value, deviceLocation?.lat, deviceLocation?.lng]);
+  }, [value, deviceLocation?.lat, deviceLocation?.lng, selectionLocked]);
+
+  function handleChange(nextValue) {
+    // Editing the field starts a new search session.
+    setSelectionLocked(false);
+    onChange(nextValue);
+  }
+
+  function handleSelect(p) {
+    // Lock the selected candidate before the parent updates the displayed
+    // address, preventing a second search against the selected label.
+    setSelectionLocked(true);
+    setResults([]);
+    setSearched(false);
+    onSelect(p);
+  }
+
+  function handleCurrent() {
+    // Current-location flow also updates the input later after reverse
+    // geocoding, so keep it out of the text-search lifecycle.
+    setSelectionLocked(true);
+    setResults([]);
+    setSearched(false);
+    onCurrent();
+  }
+
   return (
     <div className="location-box">
       <label>{label} *</label>
-      <div className="input-with-icon"><Search size={17} /><input disabled={disabled} value={value} onChange={(e) => onChange(e.target.value)} placeholder="Search a Peleka location or address" autoComplete="off" /></div>
-      <button type="button" className="current-location" onClick={onCurrent} disabled={disabled}><Crosshair size={15} /> Use my current location</button>
-      {(busy || searched) && <div className="location-results">
+      <div className="input-with-icon"><Search size={17} /><input disabled={disabled} value={value} onChange={(e) => handleChange(e.target.value)} placeholder="Search a Peleka location or address" autoComplete="off" /></div>
+      <button type="button" className="current-location" onClick={handleCurrent} disabled={disabled}><Crosshair size={15} /> Use my current location</button>
+      {(busy || searched) && !selectionLocked && <div className="location-results">
         {busy ? <div className="location-result-message">Searching…</div> : results.length > 0 ? results.slice(0, 8).map((p, i) => (
-          <button type="button" key={p.place_id || p.id || i} onClick={() => { onSelect(p); setResults([]); setSearched(false); }}>
-            <MapPin size={15} /><span><strong>{p.name || p.address || "Location"}</strong><small>{[p.sector, p.district, p.city, p.address].filter(Boolean).join(" · ")}</small>{p.source === "known" && <em>Peleka location</em>}</span>
+          <button type="button" key={p.place_id || p.id || i} onClick={() => handleSelect(p)}>
+            <MapPin size={15} /><span><strong>{p.name || p.address || "Location"}</strong><small>{[p.sector, p.district, p.city, p.address].filter(Boolean).join(" · ")}</small>{(p.source === "known" || p.provider === "peleka") && <em>Peleka location</em>}{p.source !== "known" && p.provider !== "peleka" && <em>Map result</em>}</span>
           </button>
-        )) : <div className="location-result-message">No matching Peleka location found. Try a fuller address.</div>}
+        )) : <div className="location-result-message">No matching locations found. Try a landmark, street, sector, or district.</div>}
       </div>}
     </div>
   );
