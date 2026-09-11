@@ -107,7 +107,7 @@ function RegisterContent() {
 
           <form onSubmit={submit}>
             <label className="field">
-              <span>Full name</span>
+              <span>Full name <span style={{ color: "#dc2626" }}>*</span></span>
 
               <div className="input-with-icon">
                 <UserRound size={17} />
@@ -127,6 +127,7 @@ function RegisterContent() {
                 value={f.email}
                 onChange={(v) => set("email", v)}
                 type="email"
+                required
               />
 
               <Field
@@ -135,6 +136,7 @@ function RegisterContent() {
                 value={f.confirm_email}
                 onChange={(v) => set("confirm_email", v)}
                 type="email"
+                required
               />
 
               <Field
@@ -157,6 +159,7 @@ function RegisterContent() {
                 value={f.password}
                 onChange={(v) => set("password", v)}
                 type="password"
+                required
               />
 
               <Field
@@ -165,6 +168,7 @@ function RegisterContent() {
                 value={f.confirm_password}
                 onChange={(v) => set("confirm_password", v)}
                 type="password"
+                required
               />
             </div>
 
@@ -192,10 +196,13 @@ function RegisterContent() {
   );
 }
 
-function Field({ icon: Icon, label, value, onChange, type = "text" }) {
+function Field({ icon: Icon, label, value, onChange, type = "text", required = false }) {
   return (
     <label className="field">
-      <span>{label}</span>
+      <span>
+        {label}{" "}
+        {required && <span style={{ color: "#dc2626" }}>*</span>}
+      </span>
 
       <div className="input-with-icon">
         <Icon size={17} />
@@ -204,7 +211,7 @@ function Field({ icon: Icon, label, value, onChange, type = "text" }) {
           type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          required={label !== "Email" && label !== "Phone" ? false : true}
+          required={required}
         />
       </div>
     </label>
