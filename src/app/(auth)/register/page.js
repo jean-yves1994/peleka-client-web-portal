@@ -136,7 +136,7 @@ function RegisterContent() {
                 value={f.confirm_email}
                 onChange={(v) => set("confirm_email", v)}
                 type="email"
-                required
+                required={Boolean(f.email)}
               />
 
               <Field
@@ -144,6 +144,7 @@ function RegisterContent() {
                 label="Phone"
                 value={f.phone}
                 onChange={(v) => set("phone", v)}
+                required
               />
 
               <Field
@@ -151,6 +152,7 @@ function RegisterContent() {
                 label="Confirm phone"
                 value={f.confirm_phone}
                 onChange={(v) => set("confirm_phone", v)}
+                required={Boolean(f.phone)}
               />
 
               <Field
