@@ -225,6 +225,7 @@ export default function Home() {
         <div>
           <Link href="/login">Customer portal</Link>
           <Link href="/track">Track shipment</Link>
+          <Link href="/privacy-policy">Privacy Policy</Link>
         </div>
       </footer>
     </main>
