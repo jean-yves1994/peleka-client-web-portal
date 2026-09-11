@@ -85,7 +85,7 @@ const sections = [
     title: "8. Account and Data Deletion",
     body: (
       <p>
-        The current reviewed customer app and backend do not yet expose a completed account-deletion workflow. This is a release-readiness gap: because Peleka allows account creation, Google Play requires an in-app deletion path and a working web resource through which users can request deletion of their account and associated data. Peleka must implement and verify this workflow before Play Store submission.
+        You can request deletion of your Peleka account and associated personal data at any time through our dedicated <Link href="/delete-account" style={styles.inlineLink}>Account and Data Deletion page</Link>. The page provides a clear deletion-request pathway and the privacy contact needed to submit the request. We will process deletion requests subject to legitimate retention requirements, such as security, fraud prevention, dispute resolution, completed transaction records, or legal and regulatory obligations.
       </p>
     ),
   },
@@ -105,7 +105,7 @@ const sections = [
     title: "11. Privacy Contact",
     body: (
       <p>
-        For privacy questions or requests, use the customer support/contact mechanism provided by Peleka. A dedicated public privacy contact should be added to this page before the Play Store submission so users have a clear way to submit privacy enquiries and deletion requests.
+        For privacy questions, account deletion requests, or other data requests, contact <a href="mailto:covenantsgroupstech@gmail.com" style={styles.inlineLink}>covenantsgroupstech@gmail.com</a>. You can also use our <Link href="/delete-account" style={styles.inlineLink}>Account and Data Deletion page</Link> to submit a deletion request.
       </p>
     ),
   },
@@ -158,5 +158,6 @@ const styles = {
   section: { padding: "30px 0", borderTop: "1px solid #e5dfdb" },
   heading: { fontSize: 23, lineHeight: 1.3, letterSpacing: "-0.02em", margin: "0 0 14px" },
   body: { color: "#5f5955", fontSize: 16, lineHeight: 1.75 },
+  inlineLink: { color: "#a76220", fontWeight: 700 },
   footer: { maxWidth: 1180, margin: "0 auto", padding: "28px 24px 44px", borderTop: "1px solid #e5dfdb", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, color: "#817975", fontSize: 13 },
 };
