@@ -95,10 +95,6 @@ function RegisterContent() {
       </div>
 
       <div className="auth-panel">
-        <Link href="/" className="mobile-auth-brand brand">
-          PELEKA<span>.</span>
-        </Link>
-
         <div className="auth-box wide">
           <div className="section-kicker">CREATE ACCOUNT</div>
 
