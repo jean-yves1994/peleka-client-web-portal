@@ -78,7 +78,7 @@ function LoginContent() {
 
           <form onSubmit={submit}>
             <label className="field">
-              <span>Email or phone</span>
+              <span>Email or phone <span style={{ color: "#dc2626" }}>*</span></span>
 
               <div className="input-with-icon">
                 <Mail size={17} />
@@ -93,7 +93,7 @@ function LoginContent() {
             </label>
 
             <label className="field">
-              <span>Password</span>
+              <span>Password <span style={{ color: "#dc2626" }}>*</span></span>
 
               <div className="input-with-icon">
                 <LockKeyhole size={17} />
