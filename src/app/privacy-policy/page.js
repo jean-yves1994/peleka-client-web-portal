@@ -144,20 +144,4 @@ export default function PrivacyPolicy() {
   );
 }
 
-const styles = {
-  page: { minHeight: "100vh", background: "#f7f7f5", color: "#171313" },
-  header: { maxWidth: 1180, margin: "0 auto", padding: "28px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" },
-  brand: { textDecoration: "none", color: "#171313", fontWeight: 800, letterSpacing: "-0.04em", fontSize: 22 },
-  backLink: { color: "#6f6864", textDecoration: "none", fontSize: 14, fontWeight: 600 },
-  article: { maxWidth: 860, margin: "0 auto", padding: "70px 24px 100px" },
-  kicker: { fontSize: 12, fontWeight: 800, letterSpacing: "0.18em", color: "#a76220", marginBottom: 16 },
-  title: { fontSize: "clamp(42px, 7vw, 72px)", lineHeight: 1, letterSpacing: "-0.05em", margin: 0 },
-  intro: { maxWidth: 720, fontSize: 19, lineHeight: 1.7, color: "#625b57", margin: "28px 0 12px" },
-  updated: { fontSize: 13, color: "#817975", marginBottom: 42 },
-  notice: { display: "flex", flexDirection: "column", gap: 7, padding: "20px 22px", marginBottom: 48, borderRadius: 16, background: "#fff", border: "1px solid #e5dfdb", fontSize: 14, lineHeight: 1.6 },
-  section: { padding: "30px 0", borderTop: "1px solid #e5dfdb" },
-  heading: { fontSize: 23, lineHeight: 1.3, letterSpacing: "-0.02em", margin: "0 0 14px" },
-  body: { color: "#5f5955", fontSize: 16, lineHeight: 1.75 },
-  inlineLink: { color: "#a76220", fontWeight: 700 },
-  footer: { maxWidth: 1180, margin: "0 auto", padding: "28px 24px 44px", borderTop: "1px solid #e5dfdb", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, color: "#817975", fontSize: 13 },
-};
+
