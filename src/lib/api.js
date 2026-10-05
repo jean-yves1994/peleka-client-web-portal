@@ -1,4 +1,4 @@
-const BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api").replace(/\/$/, "");
+const BASE = (process.env.NEXT_PUBLIC_API_URL || "https://server.pelekaapp.com/api").replace(/\/$/, "");
 export function getToken(){if(typeof window==="undefined")return null;return localStorage.getItem("peleka_access_token");}
 export function getRefreshToken(){if(typeof window==="undefined")return null;return localStorage.getItem("peleka_refresh_token");}
 export function saveAuth(data){if(typeof window==="undefined")return;if(data?.access_token)localStorage.setItem("peleka_access_token",data.access_token);if(data?.refresh_token)localStorage.setItem("peleka_refresh_token",data.refresh_token);}
