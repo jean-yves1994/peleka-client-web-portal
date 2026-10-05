@@ -15,6 +15,7 @@ function Inner() {
   const sp = useSearchParams();
 
   const [number, setNumber] = useState(sp.get("number") || "");
+  const [guestToken, setGuestToken] = useState(sp.get("guest_access_token") || "");
   const [data, setData] = useState(null);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
@@ -25,7 +26,7 @@ function Inner() {
     setBusy(true);
 
     try {
-      const response = await api.publicTrack(number.trim());
+      const response = await api.publicTrack(number.trim(), guestToken.trim() || undefined);
 
       // API response:
       // {
@@ -83,6 +84,8 @@ function Inner() {
             onKeyDown={(e) => e.key === "Enter" && search()}
             placeholder="e.g. PKL-000123"
           />
+
+          <input type="password" value={guestToken} onChange={(e) => setGuestToken(e.target.value)} placeholder="Guest access token (for guest shipments)" style={{marginTop:10,width:"100%"}} />
 
           <button
             className="button button-orange"
