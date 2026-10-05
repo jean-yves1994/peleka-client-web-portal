@@ -1,5 +1,4 @@
 import "./globals.css";
-import "./shipment-form-alignment.css";
 
 export const metadata = {
   title: "Peleka — Move anything. We'll get it there.",
