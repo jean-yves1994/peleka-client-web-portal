@@ -64,7 +64,7 @@ export default function Home() {
           </p>
           <div className="hero-actions">
             <Link
-              href="/dashboard/shipments/new"
+              href="/ship"
               className="button button-orange"
             >
               Start shipping <ArrowRight size={17} />
