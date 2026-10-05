@@ -45,6 +45,10 @@ function Inner() {
   return (
     <main className="auth-page single">
       <div className="auth-panel full-panel">
+          <Link href="/" className="mobile-auth-brand brand">
+            PELEKA<span>.</span>
+          </Link>
+
         <div className="auth-box">
           <div className="auth-symbol">
             <KeyRound size={22} />
