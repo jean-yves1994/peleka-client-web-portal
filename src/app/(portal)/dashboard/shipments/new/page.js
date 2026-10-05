@@ -6,7 +6,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import LocationVerification from "@/components/locations/LocationVerification";
 
-const money = (n, c = "RWF") => new Intl.NumberFormat("en-RW", { style: "currency", currency: c, maximumFractionDigits: 0 }).format(Number(n || 0));
+const money=(n)=>`RWF ${new Intl.NumberFormat("en-RW",{maximumFractionDigits:0}).format(Number(n||0))}`;
 
 function LocationBox({ label, value, onChange, onSelect, onCurrent, disabled, deviceLocation }) {
   const [results, setResults] = useState([]);
