@@ -3175,6 +3175,97 @@ td small {
 }
 
 /* ================================================================
+   AUTH MOBILE REFINEMENTS
+   Keep single-panel recovery pages stacked on narrow screens so the
+   brand sits above the form instead of participating in a horizontal row.
+   ================================================================ */
+
+@media (max-width: 767px) {
+  .auth-page.single {
+    min-height: 100dvh;
+  }
+
+  .auth-page.single .auth-panel.full-panel {
+    width: 100%;
+    min-width: 0;
+    min-height: 100dvh;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: clamp(24px, 6vh, 48px) 16px max(32px, env(safe-area-inset-bottom));
+  }
+
+  .auth-page.single .mobile-auth-brand {
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: stretch;
+    flex: 0 0 auto;
+    margin: 0 0 clamp(20px, 4vh, 30px);
+    line-height: 1;
+  }
+
+  .auth-page.single .auth-box {
+    width: min(100%, 440px);
+    min-width: 0;
+    margin: 0 auto;
+  }
+
+  .auth-page.single .auth-box h2 {
+    font-size: clamp(26px, 7.5vw, 32px);
+    line-height: 1.08;
+  }
+
+  .auth-page.single .auth-box > p {
+    max-width: 100%;
+  }
+
+  .auth-page.single .auth-box form,
+  .auth-page.single .auth-box .button.full {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .auth-page.single .field,
+  .auth-page.single .input-with-icon,
+  .auth-page.single .field input,
+  .auth-page.single .standalone-input {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .auth-page.single .mobile-auth-brand + .auth-box {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 360px) {
+  .auth-page.single .auth-panel.full-panel {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .auth-page.single .mobile-auth-brand {
+    margin-bottom: 18px;
+  }
+
+  .auth-page.single .auth-box h2 {
+    font-size: 25px;
+  }
+
+  .auth-page.single .auth-box form {
+    margin-top: 20px;
+  }
+}
+
+
+/* ================================================================
    16. REDUCED MOTION
    ================================================================ */
 
