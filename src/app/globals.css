@@ -3453,3 +3453,11 @@ td small {
   .guest-checkout .quote-side{position:relative}
   .guest-checkout .quote-panel{position:sticky;top:94px}
 }
+
+/* Password visibility controls */
+.password-field{position:relative;width:100%;display:block}
+.password-field input{width:100%;padding-right:3rem}
+.password-toggle{position:absolute;right:.65rem;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;justify-content:center;width:2rem;height:2rem;margin:0;padding:0;border:0;border-radius:.5rem;background:transparent;color:var(--ink-500,#64748b);cursor:pointer;z-index:2;transition:color .15s ease,background-color .15s ease}
+.password-toggle:hover{color:var(--ink-800,#1e293b);background:rgba(15,23,42,.06)}
+.password-toggle:focus-visible{outline:2px solid currentColor;outline-offset:1px}
+.password-toggle svg{display:block;flex:none}
