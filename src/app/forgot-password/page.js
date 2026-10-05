@@ -64,6 +64,10 @@ function ForgotContent() {
   return (
     <main className="auth-page single">
       <div className="auth-panel full-panel">
+          <Link href="/" className="mobile-auth-brand brand">
+            PELEKA<span>.</span>
+          </Link>
+
         <div className="auth-box">
           <Link href="/login" className="back-link">
             <ArrowLeft size={15} /> Back to sign in
