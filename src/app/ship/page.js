@@ -20,7 +20,8 @@ export default function GuestShip(){
  const [quote,setQuote]=useState(null),[quoteKey,setQuoteKey]=useState(""),[busy,setBusy]=useState(false),[quoteBusy,setQuoteBusy]=useState(false),[message,setMessage]=useState(""),[deviceLocation,setDeviceLocation]=useState(null),[verification,setVerification]=useState(null);
  const seq=useRef(0); const key=useMemo(()=>JSON.stringify(quoteInputs.reduce((a,k)=>(a[k]=form[k],a),{})),[form]);
  const ready=[form.pickup_lat,form.pickup_lng,form.delivery_lat,form.delivery_lng].every(v=>Number.isFinite(Number(v)));
- function invalidateQuote(){seq.current+=1;setQuote(null);setQuoteKey("");}\n function set(k,v){setForm(f=>({...f,[k]:v}));invalidateQuote();setMessage("")}
+ function invalidateQuote(){seq.current+=1;setQuote(null);setQuoteKey("");} 
+ function set(k,v){setForm(f=>({...f,[k]:v}));invalidateQuote();setMessage("")}
  useEffect(()=>{if(navigator.geolocation)navigator.geolocation.getCurrentPosition(p=>setDeviceLocation({lat:p.coords.latitude,lng:p.coords.longitude}),()=>{}, {maximumAge:300000,timeout:7000})},[]);
  function select(prefix,p){const lat=Number(p.lat??p.latitude),lng=Number(p.lng??p.longitude);if(!Number.isFinite(lat)||!Number.isFinite(lng)){setMessage("Please choose a location with valid coordinates.");return}setVerification({prefix,label:prefix==="pickup"?"Pickup location":"Delivery location",candidate:{...p,lat,lng},inputText:form[prefix+"_address"]||p.address||p.name||""})}
  function confirm(prefix,p){invalidateQuote();setForm(f=>({...f,[prefix+"_address"]:p.address||p.formatted_address||p.name||f[prefix+"_address"],[prefix+"_city"]:p.city||p.district||"",[prefix+"_lat"]:Number(p.lat),[prefix+"_lng"]:Number(p.lng)}));setVerification(null);setMessage("")}
